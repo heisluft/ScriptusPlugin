@@ -1,0 +1,101 @@
+buildscript {
+  repositories {
+    jcenter()
+  }
+  dependencies {
+    classpath 'com.github.jengelman.gradle.plugins:shadow:4.0.4'
+  }
+}
+
+group 'de.heisluft'
+version '0.0.1'
+
+apply plugin: 'com.github.johnrengelman.shadow'
+apply plugin: 'java'
+apply plugin: 'maven-publish'
+apply plugin: 'signing'
+
+sourceCompatibility = 1.8
+
+repositories {
+  mavenCentral()
+}
+
+compileJava {
+  options.encoding = 'UTF-8'
+}
+
+task sourcesJar(type: Jar) {
+  from sourceSets.main.allSource
+  archiveClassifier.set('sources')
+}
+
+task javadocJar(type: Jar) {
+  from javadoc
+  archiveClassifier.set('javadoc')
+}
+
+javadoc {
+  options.encoding = 'UTF-8'
+}
+
+repositories {
+  mavenCentral()
+}
+
+dependencies {
+  annotationProcessor 'org.projectlombok:lombok:1.18.4'
+  compileOnly 'org.projectlombok:lombok:1.18.4'
+  compileOnly gradleApi()
+  compile 'org.eclipse.jgit:org.eclipse.jgit:5.1.3.201810200350-r'
+}
+
+
+shadowJar {
+  archiveClassifier.set("")
+}
+
+publishing {
+  repositories {
+    maven {
+      url = mavenRepo
+      credentials {
+        username = mavenUsername
+        password = mavenPassword
+      }
+      authentication {
+        digest(DigestAuthentication)
+      }
+
+    }
+  }
+  publications {
+    mavenJava(MavenPublication) {
+      pom {
+        developers {
+          developer {
+            id = 'heisluft'
+            name = 'heisluft'
+            email = 'heisluftlp@gmail.com'
+            roles = ['developer']
+          }
+        }
+      }
+      artifact sourcesJar
+      artifact javadocJar
+      from components.java
+    }
+  }
+}
+
+signing {
+    sign publishing.publications.mavenJava
+}
+
+shadowJar.dependsOn jar
+publishMavenJavaPublicationToMavenLocal.dependsOn test, shadowJar
+publishMavenJavaPublicationToMavenRepository.dependsOn test, shadowJar
+
+test {
+  useJUnit()
+}
